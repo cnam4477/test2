@@ -1,0 +1,233 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+local attackConnection = nil
+local flyConnection = nil
+
+task.spawn(function()
+	local function watchEndUI(endUI)
+		endUI:GetPropertyChangedSignal("Visible"):Connect(function()
+			local retryBtn = endUI:FindFirstChild("Retry")
+			if endUI.Visible and retryBtn and retryBtn.Visible then
+				local args = { buffer.fromstring("%\000") }
+				ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+			end
+		end)
+		endUI.ChildAdded:Connect(function(child)
+			if child.Name == "Retry" then
+				child:GetPropertyChangedSignal("Visible"):Connect(function()
+					if child.Visible then
+						local args = { buffer.fromstring("%\000") }
+						ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+					end
+				end)
+			end
+		end)
+	end
+	local function watchDungeonUI(gui)
+		local endUI = gui:FindFirstChild("EndUI")
+		if endUI then watchEndUI(endUI) end
+		gui.ChildAdded:Connect(function(child)
+			if child.Name == "EndUI" then watchEndUI(child) end
+		end)
+	end
+	local gui = player.PlayerGui:FindFirstChild("DungeonEndUI")
+	if gui then watchDungeonUI(gui) end
+	player.PlayerGui.ChildAdded:Connect(function(child)
+		if child.Name == "DungeonEndUI" then watchDungeonUI(child) end
+	end)
+end)
+
+task.spawn(function()
+	while task.wait(1) do
+		if #Players:GetPlayers() > 1 then
+			if attackConnection then attackConnection:Disconnect() attackConnection = nil end
+			if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+			local args = { buffer.fromstring("%\000") }
+			ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+		end
+	end
+end)
+
+local function walkTo(pos, waitTime)
+	repeat
+		humanoid:MoveTo(pos)
+		task.wait(0.1)
+	until (rootPart.Position - pos).Magnitude < 5
+	task.wait(waitTime or 0)
+end
+
+local function enableFly()
+	local bodyVelocity = Instance.new("BodyVelocity")
+	bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+	bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0)
+	bodyVelocity.Parent = rootPart
+	return bodyVelocity
+end
+
+local function shouldSwitchToTotem()
+	local boss = workspace.World.Entities:FindFirstChild("Valdrayn")
+	if not boss then return false end
+	local stage = boss:GetAttribute("Stage")
+	if stage == nil then return false end
+	return stage >= 3
+end
+
+local function getAliveTotem()
+	local entities = workspace.World.Entities
+	local totemCandidates = {
+		function() return entities:FindFirstChild("GoatTotem") end,
+		function() return entities:GetChildren()[4] end,
+		function() return entities:GetChildren()[2] end,
+		function() return entities:GetChildren()[3] end,
+		function() return entities:GetChildren()[5] end,
+	}
+	for _, getT in ipairs(totemCandidates) do
+		local t = getT()
+		if t then
+			local hum = t:FindFirstChildWhichIsA("Humanoid")
+			if hum and hum.Health > 0 then
+				return t, t.PrimaryPart or t:FindFirstChild("HumanoidRootPart") or t:FindFirstChild("Root") or t:FindFirstChildWhichIsA("BasePart")
+			end
+		end
+	end
+	return nil, nil
+end
+
+local function allDead()
+	local entities = workspace.World.Entities
+	local boss = entities:FindFirstChild("Valdrayn")
+	if boss then
+		local h = boss:FindFirstChildWhichIsA("Humanoid")
+		if h and h.Health > 0 then return false end
+	end
+	local totemChecks = {
+		function() return entities:FindFirstChild("GoatTotem") end,
+		function() return entities:GetChildren()[4] end,
+		function() return entities:GetChildren()[2] end,
+		function() return entities:GetChildren()[3] end,
+		function() return entities:GetChildren()[5] end,
+	}
+	for _, getT in ipairs(totemChecks) do
+		local t = getT()
+		if t then
+			local hum = t:FindFirstChildWhichIsA("Humanoid")
+			if hum and hum.Health > 0 then return false end
+		end
+	end
+	return true
+end
+
+local function retry()
+	if attackConnection then attackConnection:Disconnect() attackConnection = nil end
+	if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+	local args = { buffer.fromstring("%\000") }
+	ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+end
+
+local function doEnterSequence()
+	rootPart.CFrame = CFrame.new(Vector3.new(46, 549, 232))
+	walkTo(Vector3.new(361.4197082519531, 545.7386474609375, 242.16229248046875), 0)
+	task.wait(2)
+	do
+		local args = { buffer.fromstring("j\000") }
+		ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+	end
+	task.wait(5)
+	rootPart.CFrame = CFrame.new(Vector3.new(164, -2998, 264))
+end
+
+task.wait(5)
+
+doEnterSequence()
+task.wait(60)
+
+local boss = workspace.World.Entities:FindFirstChild("Valdrayn")
+if not boss then
+	doEnterSequence()
+	local found = false
+	for i = 1, 20 do
+		task.wait(0.5)
+		if workspace.World.Entities:FindFirstChild("Valdrayn") then
+			found = true
+			break
+		end
+	end
+	if not found then
+		local args = { buffer.fromstring("%\000") }
+		ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+		return
+	end
+end
+
+local bv = enableFly()
+
+local function getBossPart()
+	local boss = workspace.World.Entities:FindFirstChild("Valdrayn")
+	if boss then
+		return boss.PrimaryPart or boss:FindFirstChild("HumanoidRootPart") or boss:FindFirstChild("Root") or boss:FindFirstChildWhichIsA("BasePart")
+	end
+	return nil
+end
+
+local inTotemMode = false
+
+flyConnection = RunService.Heartbeat:Connect(function()
+	if allDead() then
+		flyConnection:Disconnect()
+		flyConnection = nil
+		if attackConnection then attackConnection:Disconnect() attackConnection = nil end
+		if bv then bv:Destroy() end
+		retry()
+		return
+	end
+
+	if shouldSwitchToTotem() and not inTotemMode then
+		inTotemMode = true
+		if attackConnection then attackConnection:Disconnect() attackConnection = nil end
+
+		attackConnection = RunService.Heartbeat:Connect(function()
+			local totem, totemPart = getAliveTotem()
+			if not totem or not totemPart then return end
+
+			local targetPos = totemPart.Position + Vector3.new(math.random(-6, 6), 4.5, math.random(-6, 6))
+			rootPart.CFrame = CFrame.new(targetPos)
+			bv.Velocity = Vector3.new(0, 0, 0)
+
+			local totemBuffers = {
+				">\000\001\000\001\000\001\0001\a",
+				">\000\001\000\001\000\001\0003\a",
+				">\000\001\000\001\000\001\0004\004",
+				">\000\001\000\001\000\001\0002\a",
+			}
+			for _, buf in ipairs(totemBuffers) do
+				local args = { buffer.fromstring(buf) }
+				ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+			end
+		end)
+
+	elseif not inTotemMode then
+		local bossPart = getBossPart()
+		if bossPart then
+			local targetPos = bossPart.Position + Vector3.new(math.random(-6, 6), 14, math.random(-6, 6))
+			rootPart.CFrame = CFrame.new(targetPos)
+			bv.Velocity = Vector3.new(0, 0, 0)
+		end
+	end
+end)
+
+if not inTotemMode then
+	task.spawn(function()
+		while task.wait(0.2) do
+			if inTotemMode then break end
+			local args = { buffer.fromstring(">\000\001\000\001\000\001\0006\a") }
+			ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+		end
+	end)
+end
