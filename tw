@@ -49,12 +49,12 @@ local function setupSystemChatLogger()
 			},
 			footer = { text = "Item Logger  •  Valdrayn Script" },
 			fields = {
-				{ name = "👤  ผู้เล่น",         value = myDisplayName .. "  `(" .. myUsername .. ")`",              inline = true  },
+				{ name = "👤  ผู้เล่น",         value = myDisplayName .. "  `(" .. myUsername .. ")`",                  inline = true  },
 				{ name = "🎀  ไอเทม",            value = itemName ~= "" and ("**" .. itemName .. "**") or "ไม่ทราบชื่อ", inline = true  },
-				{ name = "🕐  เวลา",             value = os.date("%H:%M:%S", os.time()),                             inline = true  },
-				{ name = "📍  Server",           value = "`" .. tostring(game.PlaceId) .. "`",                       inline = true  },
-				{ name = "👥  ผู้เล่นในเซิร์ฟ", value = tostring(#Players:GetPlayers()) .. " คน",                  inline = true  },
-				{ name = "💬  System Message",   value = "```" .. clean .. "```",                                    inline = false },
+				{ name = "🕐  เวลา",             value = os.date("%H:%M:%S", os.time()),                                 inline = true  },
+				{ name = "📍  Server",           value = "`" .. tostring(game.PlaceId) .. "`",                           inline = true  },
+				{ name = "👥  ผู้เล่นในเซิร์ฟ", value = tostring(#Players:GetPlayers()) .. " คน",                      inline = true  },
+				{ name = "💬  System Message",   value = "```" .. clean .. "```",                                        inline = false },
 			}
 		}
 
@@ -233,28 +233,40 @@ local function doEnterSequence()
 	rootPart.CFrame = CFrame.new(Vector3.new(164, -2998, 264))
 end
 
+local function waitForBoss()
+	for i = 1, 30 do
+		task.wait(0.5)
+		if workspace.World.Entities:FindFirstChild("Valdrayn") then
+			return true
+		end
+	end
+	return false
+end
+
+-- ─────────────────────────────────────────
+--  START
+-- ─────────────────────────────────────────
 task.wait(5)
+
 doEnterSequence()
-task.wait(60)
+
+if not waitForBoss() then
+	task.wait(15)
+	doEnterSequence()
+	if not waitForBoss() then
+		retry()
+		return
+	end
+end
+
+task.wait(90)
 
 -- ─────────────────────────────────────────
 --  BOSS CHECK
 -- ─────────────────────────────────────────
-local boss = workspace.World.Entities:FindFirstChild("Valdrayn")
-if not boss then
-	doEnterSequence()
-	local found = false
-	for i = 1, 20 do
-		task.wait(0.5)
-		if workspace.World.Entities:FindFirstChild("Valdrayn") then
-			found = true
-			break
-		end
-	end
-	if not found then
-		retry()
-		return
-	end
+if not workspace.World.Entities:FindFirstChild("Valdrayn") then
+	retry()
+	return
 end
 
 local bv = enableFly()
