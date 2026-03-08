@@ -201,10 +201,11 @@ flyConnection = RunService.Heartbeat:Connect(function()
 			bv.Velocity = Vector3.new(0, 0, 0)
 
 			local totemBuffers = {
-				">\000\001\000\001\000\001\0001\a",
-				">\000\001\000\001\000\001\0003\a",
-				">\000\001\000\001\000\001\0004\004",
-				">\000\001\000\001\000\001\0002\a",
+				"\024\001\001\000\001\000\000\001\001\214\001\0003",
+				"\024\001\001\000\001\000\000\a\001]\001\0004",
+				"\024\001\001\000\001\000\000\a\001\206\001\0002",
+				"\024\001\001\000\001\000\000\a\001\141\001\0001",
+				"\024\001\001\000\001\000\000\001\001\214\001\0003",
 			}
 			for _, buf in ipairs(totemBuffers) do
 				local args = { buffer.fromstring(buf) }
@@ -226,7 +227,7 @@ if not inTotemMode then
 	task.spawn(function()
 		while task.wait(0.2) do
 			if inTotemMode then break end
-			local args = { buffer.fromstring("\024\001\001\000\001\000\000\003\001\021\001\000\0006") }
+			local args = { buffer.fromstring("\024\001\001\000\001\000\000\003\001\021\001\0006") }
 			ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
 		end
 	end)
