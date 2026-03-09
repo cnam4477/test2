@@ -24,6 +24,8 @@ local function stripHtml(text)
 end
 
 local function setupSystemChatLogger()
+
+if game.PlaceId ~= 118549209655225 then return end
 	local myDisplayName = player.DisplayName
 	local myUsername    = player.Name
 
