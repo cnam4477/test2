@@ -5,11 +5,58 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local TextChatService = game:GetService("TextChatService")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
+local Terrain = workspace:FindFirstChildOfClass("Terrain")
+
+-- ─────────────────────────────────────────
+--  FPS BOOST
+-- ─────────────────────────────────────────
+for _, v in pairs(game:GetDescendants()) do
+	if v:IsA("Decal") or v:IsA("Texture") then
+		v:Destroy()
+	elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") then
+		v.Enabled = false
+	elseif v:IsA("Explosion") then
+		v.BlastPressure = 1
+		v.BlastRadius = 1
+	elseif v:IsA("BasePart") then
+		v.Material = Enum.Material.SmoothPlastic
+		v.Reflectance = 0
+	elseif v:IsA("MeshPart") then
+		v.TextureID = ""
+	end
+end
+
+Lighting.GlobalShadows = false
+Lighting.FogEnd = 100000
+Lighting.Brightness = 0
+for _, v in pairs(Lighting:GetDescendants()) do
+	if v:IsA("BloomEffect")
+		or v:IsA("BlurEffect")
+		or v:IsA("SunRaysEffect")
+		or v:IsA("ColorCorrectionEffect")
+		or v:IsA("DepthOfFieldEffect") then
+		v.Enabled = false
+	end
+end
+
+if Terrain then
+	Terrain.WaterWaveSize = 0
+	Terrain.WaterWaveSpeed = 0
+	Terrain.WaterReflectance = 0
+	Terrain.WaterTransparency = 1
+end
+
+settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+
+pcall(function()
+	sethiddenproperty(Lighting, "Technology", Enum.Technology.Compatibility)
+end)
 
 -- ─────────────────────────────────────────
 --  WEBHOOK ITEM LOGGER
@@ -24,8 +71,7 @@ local function stripHtml(text)
 end
 
 local function setupSystemChatLogger()
-
-if game.PlaceId ~= 118549209655225 then return end
+	if game.PlaceId ~= 118549209655225 then return end
 	local myDisplayName = player.DisplayName
 	local myUsername    = player.Name
 
