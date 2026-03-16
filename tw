@@ -270,16 +270,22 @@ end
 -- ─────────────────────────────────────────
 --  ENTER SEQUENCE
 -- ─────────────────────────────────────────
+local remote = ReplicatedStorage:WaitForChild("ByteNetReliable")
+
 local function doEnterSequence()
 	rootPart.CFrame = CFrame.new(Vector3.new(46, 549, 232))
 	walkTo(Vector3.new(361.4197082519531, 545.7386474609375, 242.16229248046875), 0)
 	task.wait(2)
 	do
 		local args = { buffer.fromstring("n\000") }
-		ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+		remote:FireServer(unpack(args))
 	end
 	task.wait(5)
-	rootPart.CFrame = CFrame.new(Vector3.new(164, -2998, 264))
+	-- ✅ เปลี่ยนจาก teleport เป็น FireServer "r\000"
+	do
+		local args = { buffer.fromstring("r\000") }
+		remote:FireServer(unpack(args))
+	end
 end
 
 local function waitForBoss()
@@ -358,15 +364,17 @@ flyConnection = RunService.Heartbeat:Connect(function()
 			rootPart.CFrame = CFrame.new(targetPos)
 			bv.Velocity     = Vector3.new(0, 0, 0)
 
+			-- ✅ Totem buffers ใหม่
 			local totemBuffers = {
-				"\019\001\001\000\001\000\000\a\001\185\001\0002",
-				"\019\001\001\000\001\000\000\a\001\160\001\0004",
-				"\019\001\001\000\001\000\000\a\001\210\001\0003",
-				"\019\001\001\000\001\000\000\a\001\132\001\0001",
+				"\023\001\001\000\001\000\000\a\001/\001\0003",
+				"\023\001\001\000\001\000\000\a\001\140\001\0001",
+				"\023\001\001\000\001\000\000\a\001\021\001\0002",
+				"\023\001\001\000\001\000\000\a\001\242\001\0004",
+				"\023\001\001\000\001\000\000\a\001\207\001\0002",
 			}
 			for _, buf in ipairs(totemBuffers) do
 				local args = { buffer.fromstring(buf) }
-				ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+				remote:FireServer(unpack(args))
 			end
 		end)
 
@@ -384,8 +392,9 @@ if not inTotemMode then
 	task.spawn(function()
 		while task.wait(0.2) do
 			if inTotemMode then break end
-			local args = { buffer.fromstring("\019\001\001\000\001\000\000\001\001q\001\0006") }
-			ReplicatedStorage:WaitForChild("ByteNetReliable"):FireServer(unpack(args))
+			-- ✅ Boss buffer ใหม่
+			local args = { buffer.fromstring("\023\001\001\000\001\000\000\001\001\003\001\0006") }
+			remote:FireServer(unpack(args))
 		end
 	end)
 end
