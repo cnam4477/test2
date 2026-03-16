@@ -275,17 +275,13 @@ local remote = ReplicatedStorage:WaitForChild("ByteNetReliable")
 local function doEnterSequence()
 	rootPart.CFrame = CFrame.new(Vector3.new(46, 549, 232))
 	walkTo(Vector3.new(361.4197082519531, 545.7386474609375, 242.16229248046875), 0)
-	task.wait(2)
-	do
-		local args = { buffer.fromstring("n\000") }
-		remote:FireServer(unpack(args))
-	end
-	task.wait(5)
-	-- ✅ เปลี่ยนจาก teleport เป็น FireServer "r\000"
+	task.wait(0.8)
 	do
 		local args = { buffer.fromstring("r\000") }
 		remote:FireServer(unpack(args))
 	end
+	task.wait(3.5)
+	rootPart.CFrame = CFrame.new(Vector3.new(164, -2998, 264))
 end
 
 local function waitForBoss()
@@ -364,7 +360,6 @@ flyConnection = RunService.Heartbeat:Connect(function()
 			rootPart.CFrame = CFrame.new(targetPos)
 			bv.Velocity     = Vector3.new(0, 0, 0)
 
-			-- ✅ Totem buffers ใหม่
 			local totemBuffers = {
 				"\023\001\001\000\001\000\000\a\001/\001\0003",
 				"\023\001\001\000\001\000\000\a\001\140\001\0001",
@@ -392,7 +387,6 @@ if not inTotemMode then
 	task.spawn(function()
 		while task.wait(0.2) do
 			if inTotemMode then break end
-			-- ✅ Boss buffer ใหม่
 			local args = { buffer.fromstring("\023\001\001\000\001\000\000\001\001\003\001\0006") }
 			remote:FireServer(unpack(args))
 		end
